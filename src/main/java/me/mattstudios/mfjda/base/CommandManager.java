@@ -11,6 +11,8 @@ import java.util.Map;
 
 public final class CommandManager {
 
+    private final ParameterHandler parameterHandler = new ParameterHandler();
+    private final MessageHandler messageHandler = new MessageHandler();
     private final JDA jda;
     private final Map<String, CommandHandler> commands = new HashMap<>();
 
@@ -39,7 +41,7 @@ public final class CommandManager {
 
         // Adds a new command for each prefix added
         for (final String commandName : commands) {
-            this.commands.put(commandName, new CommandHandler(jda, command, commandName, Arrays.asList(prefixes)));
+            this.commands.put(commandName, new CommandHandler(parameterHandler, messageHandler, jda, command, commandName, Arrays.asList(prefixes)));
         }
 
     }
