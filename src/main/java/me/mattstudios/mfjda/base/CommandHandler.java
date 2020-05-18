@@ -1,11 +1,14 @@
 package me.mattstudios.mfjda.base;
 
 import me.mattstudios.mfjda.annotations.Default;
+import me.mattstudios.mfjda.annotations.Delete;
 import me.mattstudios.mfjda.annotations.Optional;
+import me.mattstudios.mfjda.annotations.Requirement;
 import me.mattstudios.mfjda.annotations.SubCommand;
 import me.mattstudios.mfjda.exceptions.MfException;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.MessageChannel;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -19,6 +22,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class CommandHandler extends ListenerAdapter {
 
@@ -28,10 +33,12 @@ public final class CommandHandler extends ListenerAdapter {
     private final List<String> prefixes = new ArrayList<>();
     private final ParameterHandler parameterHandler;
     private final MessageHandler messageHandler;
+    private final RequirementHandler requirementHandler;
 
-    public CommandHandler(final ParameterHandler parameterHandler, final MessageHandler messageHandler, final JDA jda, final CommandBase command, final String commandName, final List<String> prefixes) {
+    public CommandHandler(final ParameterHandler parameterHandler, final MessageHandler messageHandler, final RequirementHandler requirementHandler, final JDA jda, final CommandBase command, final String commandName, final List<String> prefixes) {
         this.parameterHandler = parameterHandler;
         this.messageHandler = messageHandler;
+        this.requirementHandler = requirementHandler;
         this.jda = jda;
         this.commandName = commandName;
         this.prefixes.addAll(prefixes);
@@ -87,6 +94,25 @@ public final class CommandHandler extends ListenerAdapter {
                 commandData.setDefault(true);
             }
 
+            if (method.isAnnotationPresent(Requirement.class)) {
+                final String requirementId = method.getAnnotation(Requirement.class).value();
+
+                if (!requirementId.startsWith("#")) {
+                    throw new MfException("Method " + method.getName() + " in class " + command.getClass().getName() + " - The requirement ID must start with #!");
+                }
+
+                if (!requirementHandler.isRegistered(requirementId)) {
+                    throw new MfException("Method " + method.getName() + " in class " + command.getClass().getName() + " - The ID entered in the requirement doesn't exist!");
+                }
+
+                commandData.setRequirement(requirementId);
+            }
+
+            // Checks if annotated with should delete
+            if (method.isAnnotationPresent(Delete.class)) {
+                commandData.setShouldDelete(true);
+            }
+
             // Checks for sub commands if the current method is not a default one
             if (!commandData.isDefault() && method.isAnnotationPresent(SubCommand.class)) {
                 for (final String subCommand : method.getAnnotation(SubCommand.class).value()) {
@@ -111,13 +137,22 @@ public final class CommandHandler extends ListenerAdapter {
     public void onGuildMessageReceived(final GuildMessageReceivedEvent event) {
         final Message message = event.getMessage();
 
+
         final List<String> arguments = Arrays.asList(message.getContentRaw().split(" "));
 
         // Checks if the message starts with the prefixes
         if (arguments.isEmpty()) return;
 
-        // Checks if the command entered is the correct one
-        if (!isCommand(arguments.get(0))) return;
+        // Gets the prefix being used and checks if it's command or not
+        final String prefix = getPrefix(arguments.get(0));
+        if (prefix == null) return;
+
+        // Checks if the command entered is the current one
+        final String commandName = arguments.get(0).replace(prefix, "");
+        if (!commandName.equalsIgnoreCase(this.commandName)) {
+            messageHandler.sendMessage("cmd.no.exists", message.getChannel());
+            return;
+        }
 
         CommandData subCommand = getDefaultSubCommand();
 
@@ -126,8 +161,17 @@ public final class CommandHandler extends ListenerAdapter {
         if (arguments.size() > 1) commandArg = arguments.get(1).toLowerCase();
         if (subCommand == null || subCommands.containsKey(commandArg)) subCommand = subCommands.get(commandArg);
 
-        // TODO wrong usage
-        if (subCommand == null) return;
+        // Checks if the user is not typing the right command
+        if (subCommand == null) {
+            wrongUsage(message.getChannel(), null);
+            return;
+        }
+
+        final String requirementId = subCommand.getRequirement();
+        if (requirementId != null && !requirementHandler.getResolvedResult(requirementId, message.getMember())) {
+            messageHandler.sendMessage("cmd.no.permission", message.getChannel());
+            return;
+        }
 
         subCommand.getCommandBase().setMessage(message);
         execute(subCommand, arguments, message);
@@ -145,6 +189,7 @@ public final class CommandHandler extends ListenerAdapter {
 
             // Check if the method only has a sender as parameter.
             if (subCommand.getParams().size() == 0 && argumentsList.size() == 0) {
+                if (subCommand.shouldDelete()) message.delete().queue();
                 method.invoke(subCommand.getCommandBase());
                 return;
             }
@@ -152,6 +197,7 @@ public final class CommandHandler extends ListenerAdapter {
             // Checks if it is a default type command with just sender and args.
             if (subCommand.getParams().size() == 1
                 && String[].class.isAssignableFrom(subCommand.getParams().get(0))) {
+                if (subCommand.shouldDelete()) message.delete().queue();
                 method.invoke(subCommand.getCommandBase(), arguments);
                 return;
             }
@@ -160,12 +206,12 @@ public final class CommandHandler extends ListenerAdapter {
             if (subCommand.getParams().size() != argumentsList.size() && !subCommand.hasOptional()) {
 
                 if (!subCommand.isDefault() && subCommand.getParams().size() == 0) {
-                    messageHandler.sendMessage("cmd.wrong.usage", message.getChannel());
+                    wrongUsage(message.getChannel(), subCommand);
                     return;
                 }
 
                 if (!String[].class.isAssignableFrom(subCommand.getParams().get(subCommand.getParams().size() - 1))) {
-                    messageHandler.sendMessage("cmd.wrong.usage", message.getChannel());
+                    wrongUsage(message.getChannel(), subCommand);
                     return;
                 }
 
@@ -181,18 +227,25 @@ public final class CommandHandler extends ListenerAdapter {
                 // Checks for optional parameter.
                 if (subCommand.hasOptional()) {
 
-                    if (argumentsList.size() > subCommand.getParams().size()) return;
+                    if (argumentsList.size() > subCommand.getParams().size()) {
+                        wrongUsage(message.getChannel(), subCommand);
+                        return;
+                    }
 
-                    if (argumentsList.size() < subCommand.getParams().size() - 1) return;
+                    if (argumentsList.size() < subCommand.getParams().size() - 1) {
+                        wrongUsage(message.getChannel(), subCommand);
+                        return;
+                    }
 
                     if (argumentsList.size() < subCommand.getParams().size()) argumentsList.add(null);
 
                 }
 
                 // checks if the parameters and arguments are valid
-                if (subCommand.getParams().size() > argumentsList.size())
-                    // TODO WRONG USAGE
+                if (subCommand.getParams().size() > argumentsList.size()) {
+                    wrongUsage(message.getChannel(), subCommand);
                     return;
+                }
 
 
                 Object argument = argumentsList.get(i);
@@ -212,6 +265,8 @@ public final class CommandHandler extends ListenerAdapter {
                 invokeParams.add(result);
             }
 
+            if (subCommand.shouldDelete()) message.delete().queue();
+
             // Calls the command method method.
             method.invoke(subCommand.getCommandBase(), invokeParams.toArray());
 
@@ -226,12 +281,17 @@ public final class CommandHandler extends ListenerAdapter {
      * @param command The message to check
      * @return Whether or not the message starts with the prefix from the list
      */
-    private boolean isCommand(final String command) {
+    private String getPrefix(final String command) {
         for (String prefix : prefixes) {
-            if (command.equals(prefix + commandName)) return true;
+            final Pattern pattern = Pattern.compile("^" + prefix + "[a-zA-Z]");
+            final Matcher matcher = pattern.matcher(command);
+
+            if (matcher.find()) {
+                return prefix;
+            }
         }
 
-        return false;
+        return null;
     }
 
     /**
@@ -241,6 +301,29 @@ public final class CommandHandler extends ListenerAdapter {
      */
     private CommandData getDefaultSubCommand() {
         return subCommands.getOrDefault("jda-default", null);
+    }
+
+    /**
+     * Sends the wrong message to the sender
+     *
+     * @param channel    The channel it's being send on
+     * @param subCommand The current sub command to get info from
+     */
+    private void wrongUsage(final MessageChannel channel, final CommandData subCommand) {
+        final String wrongMessage = null;//subCommand.getWrongUsage();
+
+        if (wrongMessage == null) {
+            messageHandler.sendMessage("cmd.wrong.usage", channel);
+            return;
+        }
+
+        if (!wrongMessage.startsWith("#") || !messageHandler.hasId(wrongMessage)) {
+            messageHandler.sendMessage("cmd.wrong.usage", channel);
+            //channel.sendMessage(subCommand.getWrongUsage()).queue();
+            return;
+        }
+
+        messageHandler.sendMessage(wrongMessage, channel);
     }
 
 }

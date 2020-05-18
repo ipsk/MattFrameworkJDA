@@ -11,6 +11,9 @@ public final class CommandData {
 
     private boolean isDefault = false;
     private boolean hasOptional = false;
+    private boolean shouldDelete = false;
+
+    private String requirement;
 
     // The list with the other parameters.
     private final List<Class<?>> params = new ArrayList<>();
@@ -50,5 +53,21 @@ public final class CommandData {
 
     public void setOptional(final boolean hasOptional) {
         this.hasOptional = hasOptional;
+    }
+
+    public boolean shouldDelete() {
+        return shouldDelete;
+    }
+
+    public void setShouldDelete(final boolean shouldDelete) {
+        this.shouldDelete = shouldDelete;
+    }
+
+    public String getRequirement() {
+        return requirement;
+    }
+
+    public void setRequirement(final String requirement) {
+        this.requirement = requirement;
     }
 }

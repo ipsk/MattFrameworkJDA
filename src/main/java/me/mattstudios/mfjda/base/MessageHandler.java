@@ -15,14 +15,9 @@ public final class MessageHandler {
 
     // Registers all the default messages.
     MessageHandler() {
-        /*register("cmd.no.permission", sender -> sender.sendMessage(color("&cYou don't have permission to execute this command!")));
-        register("cmd.no.console", sender -> sender.sendMessage(color("&cCommand can't be executed through the console!")));
-        register("cmd.no.player", sender -> sender.sendMessage(color("&cCommand can only be executed through the console!")));
-        register("cmd.no.exists", sender -> sender.sendMessage(color("&cThe command you're trying to use doesn't exist!")));
-         */
-        register("cmd.wrong.usage", channel -> {
-            channel.sendMessage(new MessageBuilder("Wrong usage for command!").build()).queue();
-        });
+        register("cmd.no.permission", channel -> channel.sendMessage(new MessageBuilder("You don't have permission to run this command!").build()).queue());
+        register("cmd.no.exists", channel -> channel.sendMessage(new MessageBuilder("That command doesn't exist!").build()).queue());
+        register("cmd.wrong.usage", channel -> channel.sendMessage(new MessageBuilder("Wrong usage for command!").build()).queue());
     }
 
     /**
@@ -43,7 +38,7 @@ public final class MessageHandler {
      * Sends the registered message to the command sender.
      *
      * @param messageId The message ID.
-     * @param channel    The command sender to send the message to.
+     * @param channel   The command sender to send the message to.
      */
     void sendMessage(final String messageId, final MessageChannel channel) {
         final MessageResolver messageResolver = messages.get(messageId);
