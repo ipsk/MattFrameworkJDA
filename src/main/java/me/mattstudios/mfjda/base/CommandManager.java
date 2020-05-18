@@ -2,6 +2,8 @@ package me.mattstudios.mfjda.base;
 
 import me.mattstudios.mfjda.annotations.Command;
 import me.mattstudios.mfjda.annotations.Prefix;
+import me.mattstudios.mfjda.base.components.MessageResolver;
+import me.mattstudios.mfjda.base.components.ParameterResolver;
 import me.mattstudios.mfjda.base.components.RequirementResolver;
 import me.mattstudios.mfjda.exceptions.MfException;
 import net.dv8tion.jda.api.JDA;
@@ -12,7 +14,7 @@ import java.util.Map;
 
 public final class CommandManager {
 
-    private final ParameterHandler parameterHandler;
+    private final ParameterHandler parameterHandler = new ParameterHandler();
     private final RequirementHandler requirementHandler = new RequirementHandler();
     private final MessageHandler messageHandler = new MessageHandler();
     private final JDA jda;
@@ -20,7 +22,6 @@ public final class CommandManager {
 
     public CommandManager(final JDA jda) {
         this.jda = jda;
-        this.parameterHandler = new ParameterHandler(jda);
     }
 
     public void register(final CommandBase command) {
@@ -49,8 +50,34 @@ public final class CommandManager {
 
     }
 
+    /**
+     * Registers the new requirement
+     *
+     * @param id                  The requirement ID
+     * @param requirementResolver The requirement resolver
+     */
     public void registerRequirement(final String id, final RequirementResolver requirementResolver) {
         requirementHandler.register(id, requirementResolver);
+    }
+
+    /**
+     * Registers the new parameter
+     *
+     * @param clss              The parameter class
+     * @param parameterResolver The requirement resolver
+     */
+    public void registerParameter(final Class<?> clss, final ParameterResolver parameterResolver) {
+        parameterHandler.register(clss, parameterResolver);
+    }
+
+    /**
+     * Registers the new message
+     *
+     * @param id              The message ID
+     * @param messageResolver The requirement resolver
+     */
+    public void registerRequirement(final String id, final MessageResolver messageResolver) {
+        messageHandler.register(id, messageResolver);
     }
 
 }
