@@ -45,6 +45,12 @@ public final class CommandManager {
 
         // Adds a new command for each prefix added
         for (final String commandName : commands) {
+            final CommandHandler commandHandler = this.commands.get(commandName);
+            if (commandHandler != null) {
+                commandHandler.registerSubCommands(command);
+                continue;
+            }
+
             this.commands.put(commandName, new CommandHandler(parameterHandler, messageHandler, requirementHandler, jda, command, commandName, Arrays.asList(prefixes)));
         }
 
@@ -80,4 +86,7 @@ public final class CommandManager {
         messageHandler.register(id, messageResolver);
     }
 
+    public void unregister(final String command) {
+
+    }
 }

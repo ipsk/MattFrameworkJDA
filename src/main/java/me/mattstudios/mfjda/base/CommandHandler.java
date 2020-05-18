@@ -53,7 +53,7 @@ public final class CommandHandler extends ListenerAdapter {
      *
      * @param command The command base given
      */
-    private void registerSubCommands(final CommandBase command) {
+    void registerSubCommands(final CommandBase command) {
 
         // Iterates through all the methods in the class
         for (final Method method : command.getClass().getDeclaredMethods()) {
@@ -89,10 +89,7 @@ public final class CommandHandler extends ListenerAdapter {
                 if (parameter.isAnnotationPresent(Optional.class)) commandData.setOptional(true);
             }
 
-            // Checks for the default command
-            if (method.isAnnotationPresent(Default.class)) {
-                commandData.setDefault(true);
-            }
+            checkDefault(method, commandData);
 
             if (method.isAnnotationPresent(Requirement.class)) {
                 final String requirementId = method.getAnnotation(Requirement.class).value();
@@ -109,9 +106,7 @@ public final class CommandHandler extends ListenerAdapter {
             }
 
             // Checks if annotated with should delete
-            if (method.isAnnotationPresent(Delete.class)) {
-                commandData.setShouldDelete(true);
-            }
+            checkShouldDelete(method, commandData);
 
             // Checks for sub commands if the current method is not a default one
             if (!commandData.isDefault() && method.isAnnotationPresent(SubCommand.class)) {
@@ -136,8 +131,6 @@ public final class CommandHandler extends ListenerAdapter {
     @Override
     public void onGuildMessageReceived(final GuildMessageReceivedEvent event) {
         final Message message = event.getMessage();
-
-
         final List<String> arguments = Arrays.asList(message.getContentRaw().split(" "));
 
         // Checks if the message starts with the prefixes
@@ -204,7 +197,6 @@ public final class CommandHandler extends ListenerAdapter {
 
             // Checks for correct command usage.
             if (subCommand.getParams().size() != argumentsList.size() && !subCommand.hasOptional()) {
-
                 if (!subCommand.isDefault() && subCommand.getParams().size() == 0) {
                     wrongUsage(message.getChannel(), subCommand);
                     return;
@@ -304,26 +296,37 @@ public final class CommandHandler extends ListenerAdapter {
     }
 
     /**
+     * Checks if the method is default or not
+     *
+     * @param method      The method
+     * @param commandData The command data
+     */
+    private void checkDefault(final Method method, final CommandData commandData) {
+        if (method.getAnnotation(Default.class) != null) {
+            commandData.setDefault(true);
+        }
+    }
+
+    /**
+     * Checks if the method has the delete annotation
+     *
+     * @param method      The method
+     * @param commandData The command data
+     */
+    private void checkShouldDelete(final Method method, final CommandData commandData) {
+        if (method.isAnnotationPresent(Delete.class)) {
+            commandData.setShouldDelete(true);
+        }
+    }
+
+    /**
      * Sends the wrong message to the sender
      *
      * @param channel    The channel it's being send on
      * @param subCommand The current sub command to get info from
      */
     private void wrongUsage(final MessageChannel channel, final CommandData subCommand) {
-        final String wrongMessage = null;//subCommand.getWrongUsage();
-
-        if (wrongMessage == null) {
-            messageHandler.sendMessage("cmd.wrong.usage", channel);
-            return;
-        }
-
-        if (!wrongMessage.startsWith("#") || !messageHandler.hasId(wrongMessage)) {
-            messageHandler.sendMessage("cmd.wrong.usage", channel);
-            //channel.sendMessage(subCommand.getWrongUsage()).queue();
-            return;
-        }
-
-        messageHandler.sendMessage(wrongMessage, channel);
+        messageHandler.sendMessage("cmd.wrong.usage", channel);
     }
 
 }
