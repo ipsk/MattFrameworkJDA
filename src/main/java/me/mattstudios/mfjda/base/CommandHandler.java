@@ -6,46 +6,44 @@ import me.mattstudios.mfjda.annotations.Optional;
 import me.mattstudios.mfjda.annotations.Requirement;
 import me.mattstudios.mfjda.annotations.SubCommand;
 import me.mattstudios.mfjda.exceptions.MfException;
-import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.MessageChannel;
-import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
-import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Parameter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-public final class CommandHandler extends ListenerAdapter {
+public final class CommandHandler {
 
-    private final JDA jda;
-    private final String commandName;
     private final Map<String, CommandData> subCommands = new HashMap<>();
     private final List<String> prefixes = new ArrayList<>();
     private final ParameterHandler parameterHandler;
     private final MessageHandler messageHandler;
     private final RequirementHandler requirementHandler;
 
-    public CommandHandler(final ParameterHandler parameterHandler, final MessageHandler messageHandler, final RequirementHandler requirementHandler, final JDA jda, final CommandBase command, final String commandName, final List<String> prefixes) {
+    public CommandHandler(final ParameterHandler parameterHandler,final MessageHandler messageHandler,final RequirementHandler requirementHandler, final CommandBase command, final List<String> prefixes) {
         this.parameterHandler = parameterHandler;
         this.messageHandler = messageHandler;
         this.requirementHandler = requirementHandler;
-        this.jda = jda;
-        this.commandName = commandName;
+
         this.prefixes.addAll(prefixes);
-
-        jda.addEventListener(this);
-
         registerSubCommands(command);
+    }
+
+    /**
+     * Checks whether or not the prefix is for this command
+     *
+     * @param prefix The prefix to check
+     * @return True or false
+     */
+    boolean isPrefix(final String prefix) {
+        return prefixes.parallelStream().anyMatch(p -> p.equals(prefix));
     }
 
     /**
@@ -126,27 +124,12 @@ public final class CommandHandler extends ListenerAdapter {
     }
 
     /**
-     * Listens for the command
+     * Method to run the command and it's sub commands
+     *
+     * @param message   The message being parsed
+     * @param arguments The arguments from the message
      */
-    @Override
-    public void onGuildMessageReceived(final GuildMessageReceivedEvent event) {
-        final Message message = event.getMessage();
-        final List<String> arguments = Arrays.asList(message.getContentRaw().split(" "));
-
-        // Checks if the message starts with the prefixes
-        if (arguments.isEmpty()) return;
-
-        // Gets the prefix being used and checks if it's command or not
-        final String prefix = getPrefix(arguments.get(0));
-        if (prefix == null) return;
-
-        // Checks if the command entered is the current one
-        final String commandName = arguments.get(0).replace(prefix, "");
-        if (!commandName.equalsIgnoreCase(this.commandName)) {
-            messageHandler.sendMessage("cmd.no.exists", message.getChannel());
-            return;
-        }
-
+    public void executeCommand(final Message message, final List<String> arguments) {
         CommandData subCommand = getDefaultSubCommand();
 
         // Checks if it should be a default command or a sub command
@@ -265,25 +248,6 @@ public final class CommandHandler extends ListenerAdapter {
         } catch (IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
         }
-    }
-
-    /**
-     * Checks if the message starts with the given prefix
-     *
-     * @param command The message to check
-     * @return Whether or not the message starts with the prefix from the list
-     */
-    private String getPrefix(final String command) {
-        for (String prefix : prefixes) {
-            final Pattern pattern = Pattern.compile("^" + prefix + "[a-zA-Z]");
-            final Matcher matcher = pattern.matcher(command);
-
-            if (matcher.find()) {
-                return prefix;
-            }
-        }
-
-        return null;
     }
 
     /**
