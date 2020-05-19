@@ -88,12 +88,21 @@
             <groupId>net.dv8tion</groupId>
             <artifactId>JDA</artifactId>
             <version>4.1.1_148</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>29.0-jre</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!--<dependency>
             <groupId>ch.jalu</groupId>
             <artifactId>configme</artifactId>
             <version>1.1.0</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -106,13 +115,7 @@
             <groupId>log4j</groupId>
             <artifactId>apache-log4j-extras</artifactId>
             <version>1.2.17</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>29.0-jre</version>
-        </dependency>
+        </dependency>-->
     </dependencies>
 
     <build>

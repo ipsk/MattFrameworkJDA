@@ -82,7 +82,7 @@ public final class CommandManager {
      * @param id              The message ID
      * @param messageResolver The requirement resolver
      */
-    public void registerRequirement(final String id, final MessageResolver messageResolver) {
+    public void registerMessage(final String id, final MessageResolver messageResolver) {
         messageHandler.register(id, messageResolver);
     }
 
