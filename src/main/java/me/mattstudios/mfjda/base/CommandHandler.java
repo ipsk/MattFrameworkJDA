@@ -174,7 +174,7 @@ public final class CommandHandler {
             if (subCommand.getParams().size() == 1
                 && String[].class.isAssignableFrom(subCommand.getParams().get(0))) {
                 if (subCommand.shouldDelete()) message.delete().queue();
-                method.invoke(subCommand.getCommandBase(), arguments);
+                method.invoke(subCommand.getCommandBase(), arguments.toArray());
                 return;
             }
 
