@@ -14,6 +14,8 @@ public final class CommandData {
     private boolean shouldDelete = false;
 
     private String requirement;
+    private int lowerLimit = -1;
+    private int upperLimit = -1;
 
     // The list with the other parameters.
     private final List<Class<?>> params = new ArrayList<>();
@@ -69,5 +71,21 @@ public final class CommandData {
 
     public void setRequirement(final String requirement) {
         this.requirement = requirement;
+    }
+
+    public int getLowerLimit() {
+        return lowerLimit;
+    }
+
+    public void setLowerLimit(final int lowerLimit) {
+        this.lowerLimit = lowerLimit;
+    }
+
+    public int getUpperLimit() {
+        return upperLimit;
+    }
+
+    public void setUpperLimit(final int upperLimit) {
+        this.upperLimit = upperLimit;
     }
 }

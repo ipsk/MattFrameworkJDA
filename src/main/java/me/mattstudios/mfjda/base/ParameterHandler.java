@@ -6,6 +6,8 @@ import com.google.common.primitives.Ints;
 import com.google.common.primitives.Longs;
 import me.mattstudios.mfjda.base.components.ParameterResolver;
 import me.mattstudios.mfjda.base.components.TypeResult;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.User;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -16,7 +18,7 @@ public final class ParameterHandler {
     private final Map<Class<?>, ParameterResolver> registeredTypes = new HashMap<>();
 
     // Registers all the parameters;
-    ParameterHandler() {
+    ParameterHandler(final JDA jda) {
         register(Short.class, arg -> {
             final Integer integer = Ints.tryParse(String.valueOf(arg));
             return integer == null ? new TypeResult(arg) : new TypeResult(integer.shortValue(), arg);
@@ -37,6 +39,11 @@ public final class ParameterHandler {
         register(Boolean.class, arg -> new TypeResult(Boolean.valueOf(String.valueOf(arg)), arg));
         register(boolean.class, arg -> new TypeResult(Boolean.valueOf(String.valueOf(arg)), arg));
 
+        register(User.class, arg -> {
+            if (arg == null) return new TypeResult(null);
+            final String numericArg = arg.toString().replaceAll(("[^\\d]"), "");
+            return new TypeResult(jda.getUserById(numericArg), arg);
+        });
     }
 
     /**

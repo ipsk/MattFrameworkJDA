@@ -30,7 +30,7 @@
 
     <groupId>me.mattstudios.utils</groupId>
     <artifactId>matt-framework-jda</artifactId>
-    <version>1.1.2-BETA</version>
+    <version>1.1.7-BETA</version>
     <packaging>jar</packaging>
 
     <name>Matt's Framework - JDA</name>
@@ -97,24 +97,6 @@
             <version>29.0-jre</version>
             <scope>compile</scope>
         </dependency>
-
-        <!--<dependency>
-            <groupId>ch.jalu</groupId>
-            <artifactId>configme</artifactId>
-            <version>1.1.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-log4j12</artifactId>
-            <version>1.7.5</version>
-        </dependency>
-
-        <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>apache-log4j-extras</artifactId>
-            <version>1.2.17</version>
-        </dependency>-->
     </dependencies>
 
     <build>

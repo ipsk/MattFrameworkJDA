@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -26,7 +27,7 @@ public final class CommandManager extends ListenerAdapter {
 
     private final JDA jda;
 
-    private final ParameterHandler parameterHandler = new ParameterHandler();
+    private final ParameterHandler parameterHandler;
     private final RequirementHandler requirementHandler = new RequirementHandler();
     private final MessageHandler messageHandler = new MessageHandler();
 
@@ -35,6 +36,7 @@ public final class CommandManager extends ListenerAdapter {
 
     public CommandManager(final JDA jda) {
         this.jda = jda;
+        this.parameterHandler = new ParameterHandler(jda);
 
         jda.addEventListener(this);
     }
@@ -42,6 +44,12 @@ public final class CommandManager extends ListenerAdapter {
     public void register(final CommandBase command) {
         // Injects JDA into the command class
         command.setJda(jda);
+
+        if (command instanceof BuildCommand) {
+            final BuildCommand buildCommand = (BuildCommand) command;
+            addCommands(buildCommand.getCommands(), buildCommand.getPrefixes(), buildCommand);
+            return;
+        }
 
         final Class<?> commandClass = command.getClass();
 
@@ -59,6 +67,18 @@ public final class CommandManager extends ListenerAdapter {
         final String[] commands = commandClass.getAnnotation(Command.class).value();
 
         // Adds a new command for each prefix added
+        addCommands(Arrays.asList(commands), Arrays.asList(prefixes), command);
+
+    }
+
+    /**
+     * Method to add the registered commands
+     *
+     * @param commands The command and it's aliases
+     * @param prefixes The prefix to add
+     * @param command  The base command
+     */
+    private void addCommands(final List<String> commands, final List<String> prefixes, final CommandBase command) {
         for (final String commandName : commands) {
             final CommandHandler commandHandler = this.commands.get(commandName);
             if (commandHandler != null) {
@@ -66,10 +86,26 @@ public final class CommandManager extends ListenerAdapter {
                 continue;
             }
 
-            this.prefixes.addAll(Arrays.asList(prefixes));
-            this.commands.put(commandName, new CommandHandler(parameterHandler, messageHandler, requirementHandler, command, Arrays.asList(prefixes)));
+            this.prefixes.addAll(prefixes);
+            this.commands.put(commandName, new CommandHandler(parameterHandler, messageHandler, requirementHandler, command, prefixes));
         }
+    }
 
+    /**
+     * Unregisters the given command and prefix
+     * @param prefix The prefix
+     * @param command The command name
+     */
+    public void unregister(final String prefix, final String command) {
+        if (!prefixes.contains(prefix)) return;
+        commands.remove(command);
+
+        final Optional<CommandHandler> optional = commands.values()
+                .parallelStream()
+                .filter(commandHandler -> !commandHandler.isPrefix(prefix))
+                .findAny();
+
+        if (!optional.isPresent()) prefixes.remove(prefix);
     }
 
     /**
@@ -118,13 +154,13 @@ public final class CommandManager extends ListenerAdapter {
         final String commandName = arguments.get(0).replace(prefix, "");
         final CommandHandler commandHandler = commands.get(commandName);
         if (commandHandler == null) {
-            message.getChannel().sendMessage("COMMAND DOESN'T EXIST").queue();
+            messageHandler.sendMessage("cmd.no.exists", message.getChannel());
             return;
         }
 
         // Checks if the command given uses this prefix
         if (!commandHandler.isPrefix(prefix)) {
-            message.getChannel().sendMessage("COMMAND DOESN'T EXIST").queue();
+            messageHandler.sendMessage("cmd.no.exists", message.getChannel());
             return;
         }
 

@@ -27,7 +27,7 @@ public final class CommandHandler {
     private final MessageHandler messageHandler;
     private final RequirementHandler requirementHandler;
 
-    public CommandHandler(final ParameterHandler parameterHandler,final MessageHandler messageHandler,final RequirementHandler requirementHandler, final CommandBase command, final List<String> prefixes) {
+    public CommandHandler(final ParameterHandler parameterHandler, final MessageHandler messageHandler, final RequirementHandler requirementHandler, final CommandBase command, final List<String> prefixes) {
         this.parameterHandler = parameterHandler;
         this.messageHandler = messageHandler;
         this.requirementHandler = requirementHandler;
@@ -52,6 +52,34 @@ public final class CommandHandler {
      * @param command The command base given
      */
     void registerSubCommands(final CommandBase command) {
+
+        // Command made from builder
+        // TODO move methods out of this one
+        if (command instanceof BuildCommand) {
+            final BuildCommand buildCommand = (BuildCommand) command;
+
+            prefixes.addAll(buildCommand.getPrefixes());
+
+            final CommandData commandData = new CommandData(command, null);
+
+            commandData.setLowerLimit(buildCommand.getLowerLimit());
+            commandData.setUpperLimit(buildCommand.getUpperLimit());
+            commandData.setRequirement(buildCommand.getRequirement());
+            commandData.setShouldDelete(buildCommand.autoDelete());
+
+            final List<String> subCommands = buildCommand.getSubCommands();
+            if (subCommands.isEmpty()) {
+                commandData.setDefault(true);
+                this.subCommands.put("jda-default", commandData);
+                return;
+            }
+
+            for (final String subCommand : subCommands) {
+                this.subCommands.put(subCommand, commandData);
+            }
+
+            return;
+        }
 
         // Iterates through all the methods in the class
         for (final Method method : command.getClass().getDeclaredMethods()) {
@@ -163,6 +191,11 @@ public final class CommandHandler {
             if (argumentsList.size() > 0) argumentsList.remove(0);
             if (!subCommand.isDefault()) argumentsList.remove(0);
 
+            if (subCommand.getCommandBase() instanceof BuildCommand) {
+                executeBuildCommand(subCommand, argumentsList, message);
+                return;
+            }
+
             // Check if the method only has a sender as parameter.
             if (subCommand.getParams().size() == 0 && argumentsList.size() == 0) {
                 if (subCommand.shouldDelete()) message.delete().queue();
@@ -174,7 +207,7 @@ public final class CommandHandler {
             if (subCommand.getParams().size() == 1
                 && String[].class.isAssignableFrom(subCommand.getParams().get(0))) {
                 if (subCommand.shouldDelete()) message.delete().queue();
-                method.invoke(subCommand.getCommandBase(), arguments.toArray());
+                method.invoke(subCommand.getCommandBase(), (Object) argumentsList.toArray(new String[0]));
                 return;
             }
 
@@ -244,10 +277,25 @@ public final class CommandHandler {
 
             // Calls the command method method.
             method.invoke(subCommand.getCommandBase(), invokeParams.toArray());
-
         } catch (IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
         }
+    }
+
+    private void executeBuildCommand(final CommandData subCommand, final List<String> arguments, final Message message) {
+        final BuildCommand buildCommand = (BuildCommand) subCommand.getCommandBase();
+
+        final int upperLimit = subCommand.getUpperLimit();
+        final int lowerLimit = subCommand.getLowerLimit();
+        final int argumentSize = arguments.size();
+
+        if ((upperLimit != -1 && argumentSize > upperLimit) || (lowerLimit != -1 && argumentSize < lowerLimit)) {
+            wrongUsage(message.getChannel(), subCommand);
+            return;
+        }
+
+        if (subCommand.shouldDelete()) message.delete().queue();
+        buildCommand.execute(arguments, message);
     }
 
     /**
