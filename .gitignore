@@ -24,3 +24,7 @@ config/
 src/main/java/me/mattstudios/mfjda/settings/
 
 src/main/java/me/mattstudios/mfjda/test/
+
+src/main/java/me/mattstudios/mfjda/Cmd.java
+
+src/main/java/me/mattstudios/mfjda/Main.java

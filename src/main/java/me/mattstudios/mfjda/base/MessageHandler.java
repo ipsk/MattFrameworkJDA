@@ -2,7 +2,7 @@ package me.mattstudios.mfjda.base;
 
 import me.mattstudios.mfjda.base.components.MessageResolver;
 import me.mattstudios.mfjda.exceptions.MfException;
-import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.Message;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,9 +14,9 @@ public final class MessageHandler {
 
     // Registers all the default messages.
     MessageHandler() {
-        register("cmd.no.permission", channel -> channel.sendMessage("You don't have permission to run this command!").queue());
-        register("cmd.no.exists", channel -> channel.sendMessage("That command doesn't exist!").queue());
-        register("cmd.wrong.usage", channel -> channel.sendMessage("Wrong usage for command!").queue());
+        register("cmd.no.permission", message -> message.getChannel().sendMessage("You don't have permission to run this command!").queue());
+        register("cmd.no.exists", message -> message.getChannel().sendMessage("That command doesn't exist!").queue());
+        register("cmd.wrong.usage", message -> message.getChannel().sendMessage("Wrong usage for command!").queue());
     }
 
     /**
@@ -39,15 +39,15 @@ public final class MessageHandler {
     }
 
     /**
-     * Sends the registered message to the command sender.
+     * Sends the registered message to the channel.
      *
      * @param messageId The message ID.
-     * @param channel   The command sender to send the message to.
+     * @param message   The message that was sent to get data to send the message to.
      */
-    void sendMessage(final String messageId, final MessageChannel channel) {
+    void sendMessage(final String messageId, final Message message) {
         final MessageResolver messageResolver = messages.get(messageId);
         if (messageResolver == null) throw new MfException("The message ID " + messageId + " does not exist!");
-        messageResolver.resolve(channel);
+        messageResolver.resolve(message);
     }
 
 }

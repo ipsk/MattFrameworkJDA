@@ -12,6 +12,7 @@ import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,6 +27,7 @@ import java.util.regex.Pattern;
 public final class CommandManager extends ListenerAdapter {
 
     private final JDA jda;
+    private String globalPrefix;
 
     private final ParameterHandler parameterHandler;
     private final RequirementHandler requirementHandler = new RequirementHandler();
@@ -34,11 +36,16 @@ public final class CommandManager extends ListenerAdapter {
     private final Set<String> prefixes = new HashSet<>();
     private final Map<String, CommandHandler> commands = new HashMap<>();
 
-    public CommandManager(final JDA jda) {
+    public CommandManager(final JDA jda, final String globalPrefix) {
         this.jda = jda;
         this.parameterHandler = new ParameterHandler(jda);
+        this.globalPrefix = globalPrefix;
 
         jda.addEventListener(this);
+    }
+
+    public CommandManager(final JDA jda) {
+        this(jda, null);
     }
 
     public void register(final CommandBase command) {
@@ -54,7 +61,7 @@ public final class CommandManager extends ListenerAdapter {
         final Class<?> commandClass = command.getClass();
 
         // Checks for the Prefix annotation
-        if (!commandClass.isAnnotationPresent(Prefix.class)) {
+        if (!commandClass.isAnnotationPresent(Prefix.class) && globalPrefix == null) {
             throw new MfException("Class " + commandClass.getName() + " needs to be annotated with @Prefix!");
         }
 
@@ -63,11 +70,13 @@ public final class CommandManager extends ListenerAdapter {
             throw new MfException("Class " + commandClass.getName() + " needs to be annotated with @Command!");
         }
 
-        final String[] prefixes = commandClass.getAnnotation(Prefix.class).value();
-        final String[] commands = commandClass.getAnnotation(Command.class).value();
+        final List<String> prefixes = !commandClass.isAnnotationPresent(Prefix.class) ? new ArrayList<>() : Arrays.asList(commandClass.getAnnotation(Prefix.class).value());
+        final List<String> commands = Arrays.asList(commandClass.getAnnotation(Command.class).value());
+
+        if (prefixes.isEmpty()) prefixes.add(globalPrefix);
 
         // Adds a new command for each prefix added
-        addCommands(Arrays.asList(commands), Arrays.asList(prefixes), command);
+        addCommands(commands, prefixes, command);
 
     }
 
@@ -102,7 +111,7 @@ public final class CommandManager extends ListenerAdapter {
 
         final Optional<CommandHandler> optional = commands.values()
                 .parallelStream()
-                .filter(commandHandler -> !commandHandler.isPrefix(prefix))
+                .filter(commandHandler -> commandHandler.isPrefix(prefix))
                 .findAny();
 
         if (!optional.isPresent()) prefixes.remove(prefix);
@@ -154,13 +163,13 @@ public final class CommandManager extends ListenerAdapter {
         final String commandName = arguments.get(0).replace(prefix, "");
         final CommandHandler commandHandler = commands.get(commandName);
         if (commandHandler == null) {
-            messageHandler.sendMessage("cmd.no.exists", message.getChannel());
+            messageHandler.sendMessage("cmd.no.exists", message);
             return;
         }
 
         // Checks if the command given uses this prefix
         if (!commandHandler.isPrefix(prefix)) {
-            messageHandler.sendMessage("cmd.no.exists", message.getChannel());
+            messageHandler.sendMessage("cmd.no.exists", message);
             return;
         }
 

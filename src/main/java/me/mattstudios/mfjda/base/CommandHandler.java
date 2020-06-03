@@ -7,7 +7,6 @@ import me.mattstudios.mfjda.annotations.Requirement;
 import me.mattstudios.mfjda.annotations.SubCommand;
 import me.mattstudios.mfjda.exceptions.MfException;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.MessageChannel;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -140,7 +139,7 @@ public final class CommandHandler {
                     subCommands.put(subCommand.toLowerCase(), commandData);
                 }
 
-                return;
+                continue;
             }
 
             // If the command is default add default command
@@ -167,13 +166,13 @@ public final class CommandHandler {
 
         // Checks if the user is not typing the right command
         if (subCommand == null) {
-            wrongUsage(message.getChannel(), null);
+            wrongUsage(message, null);
             return;
         }
 
         final String requirementId = subCommand.getRequirement();
         if (requirementId != null && !requirementHandler.getResolvedResult(requirementId, message.getMember())) {
-            messageHandler.sendMessage("cmd.no.permission", message.getChannel());
+            messageHandler.sendMessage("cmd.no.permission", message);
             return;
         }
 
@@ -214,12 +213,12 @@ public final class CommandHandler {
             // Checks for correct command usage.
             if (subCommand.getParams().size() != argumentsList.size() && !subCommand.hasOptional()) {
                 if (!subCommand.isDefault() && subCommand.getParams().size() == 0) {
-                    wrongUsage(message.getChannel(), subCommand);
+                    wrongUsage(message, subCommand);
                     return;
                 }
 
                 if (!String[].class.isAssignableFrom(subCommand.getParams().get(subCommand.getParams().size() - 1))) {
-                    wrongUsage(message.getChannel(), subCommand);
+                    wrongUsage(message, subCommand);
                     return;
                 }
 
@@ -236,12 +235,12 @@ public final class CommandHandler {
                 if (subCommand.hasOptional()) {
 
                     if (argumentsList.size() > subCommand.getParams().size()) {
-                        wrongUsage(message.getChannel(), subCommand);
+                        wrongUsage(message, subCommand);
                         return;
                     }
 
                     if (argumentsList.size() < subCommand.getParams().size() - 1) {
-                        wrongUsage(message.getChannel(), subCommand);
+                        wrongUsage(message, subCommand);
                         return;
                     }
 
@@ -251,7 +250,7 @@ public final class CommandHandler {
 
                 // checks if the parameters and arguments are valid
                 if (subCommand.getParams().size() > argumentsList.size()) {
-                    wrongUsage(message.getChannel(), subCommand);
+                    wrongUsage(message, subCommand);
                     return;
                 }
 
@@ -269,7 +268,7 @@ public final class CommandHandler {
                     argument = args;
                 }
 
-                final Object result = parameterHandler.getTypeResult(parameter, argument, subCommand, subCommand.getParams().get(i).getName());
+                final Object result = parameterHandler.getTypeResult(parameter, argument, message.getGuild(), subCommand, subCommand.getParams().get(i).getName());
                 invokeParams.add(result);
             }
 
@@ -290,7 +289,7 @@ public final class CommandHandler {
         final int argumentSize = arguments.size();
 
         if ((upperLimit != -1 && argumentSize > upperLimit) || (lowerLimit != -1 && argumentSize < lowerLimit)) {
-            wrongUsage(message.getChannel(), subCommand);
+            wrongUsage(message, subCommand);
             return;
         }
 
@@ -334,11 +333,11 @@ public final class CommandHandler {
     /**
      * Sends the wrong message to the sender
      *
-     * @param channel    The channel it's being send on
+     * @param message    The message that is being sent
      * @param subCommand The current sub command to get info from
      */
-    private void wrongUsage(final MessageChannel channel, final CommandData subCommand) {
-        messageHandler.sendMessage("cmd.wrong.usage", channel);
+    private void wrongUsage(final Message message, final CommandData subCommand) {
+        messageHandler.sendMessage("cmd.wrong.usage", message);
     }
 
 }

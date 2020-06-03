@@ -1,6 +1,6 @@
 package me.mattstudios.mfjda.base.components;
 
-import net.dv8tion.jda.api.entities.MessageChannel;
+import net.dv8tion.jda.api.entities.Message;
 
 @FunctionalInterface
 public interface MessageResolver {
@@ -8,8 +8,8 @@ public interface MessageResolver {
     /**
      * Resolves messages and executes the code registered in it.
      *
-     * @param channel The command sender to send the message to.
+     * @param message The message that was typed
      */
-    void resolve(MessageChannel channel);
+    void resolve(final Message message);
 
 }

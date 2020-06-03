@@ -7,6 +7,8 @@ import com.google.common.primitives.Longs;
 import me.mattstudios.mfjda.base.components.ParameterResolver;
 import me.mattstudios.mfjda.base.components.TypeResult;
 import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
 
 import java.util.HashMap;
@@ -19,31 +21,38 @@ public final class ParameterHandler {
 
     // Registers all the parameters;
     ParameterHandler(final JDA jda) {
-        register(Short.class, arg -> {
+        register(Short.class, (arg, guild) -> {
             final Integer integer = Ints.tryParse(String.valueOf(arg));
             return integer == null ? new TypeResult(arg) : new TypeResult(integer.shortValue(), arg);
         });
-        register(Integer.class, arg -> new TypeResult(Ints.tryParse(String.valueOf(arg)), arg));
-        register(Long.class, arg -> new TypeResult(Longs.tryParse(String.valueOf(arg)), arg));
-        register(Float.class, arg -> new TypeResult(Floats.tryParse(String.valueOf(arg)), arg));
-        register(Double.class, arg -> new TypeResult(Doubles.tryParse(String.valueOf(arg)), arg));
+        register(Integer.class, (arg, guild) -> new TypeResult(Ints.tryParse(String.valueOf(arg)), arg));
+        register(Long.class, (arg, guild) -> new TypeResult(Longs.tryParse(String.valueOf(arg)), arg));
+        register(Float.class, (arg, guild) -> new TypeResult(Floats.tryParse(String.valueOf(arg)), arg));
+        register(Double.class, (arg, guild) -> new TypeResult(Doubles.tryParse(String.valueOf(arg)), arg));
 
-        register(String.class, arg -> arg instanceof String ? new TypeResult(arg, arg) : new TypeResult(arg));
+        register(String.class, (arg, guild) -> arg instanceof String ? new TypeResult(arg, arg) : new TypeResult(arg));
 
-        register(String[].class, arg -> {
+        register(String[].class, (arg, guild) -> {
             if (arg instanceof String[]) return new TypeResult(arg, arg);
             // Will most likely never happen.
             return new TypeResult(arg);
         });
 
-        register(Boolean.class, arg -> new TypeResult(Boolean.valueOf(String.valueOf(arg)), arg));
-        register(boolean.class, arg -> new TypeResult(Boolean.valueOf(String.valueOf(arg)), arg));
+        register(Boolean.class, (arg, guild) -> new TypeResult(Boolean.valueOf(String.valueOf(arg)), arg));
+        register(boolean.class, (arg, guild) -> new TypeResult(Boolean.valueOf(String.valueOf(arg)), arg));
 
-        register(User.class, arg -> {
+        register(User.class, (arg, guild) -> {
             if (arg == null) return new TypeResult(null);
             final String numericArg = arg.toString().replaceAll(("[^\\d]"), "");
             return new TypeResult(jda.getUserById(numericArg), arg);
         });
+
+        register(Member.class, (arg, guild) -> {
+            if (arg == null) return new TypeResult(null);
+            final String numericArg = arg.toString().replaceAll(("[^\\d]"), "");
+            return new TypeResult(guild.getMemberById(numericArg), arg);
+        });
+
     }
 
     /**
@@ -65,8 +74,8 @@ public final class ParameterHandler {
      * @param paramName  The parameter name from the command method.
      * @return The output object of the functional interface.
      */
-    Object getTypeResult(final Class<?> clss, final Object object, final CommandData subCommand, final String paramName) {
-        final TypeResult result = registeredTypes.get(clss).resolve(object);
+    Object getTypeResult(final Class<?> clss, final Object object, final Guild guild, final CommandData subCommand, final String paramName) {
+        final TypeResult result = registeredTypes.get(clss).resolve(object, guild);
         //subCommand.getCommandBase().addArgument(paramName, result.getArgumentName());
 
         return result.getResolvedValue();
