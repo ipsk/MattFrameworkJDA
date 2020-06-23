@@ -107,7 +107,7 @@ public final class CommandManager extends ListenerAdapter {
      *
      * @param commands the list of commands to register
      */
-    public void registerAll(final List<CommandBase> commands) {
+    public void register(final List<CommandBase> commands) {
         commands.forEach(this::register);
     }
 
