@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.entities.User;
 import java.util.HashMap;
 import java.util.Map;
 
+@SuppressWarnings("UnstableApiUsage")
 public final class ParameterHandler {
 
     // The map of registered parameters.
@@ -90,6 +91,5 @@ public final class ParameterHandler {
     boolean isRegisteredType(final Class<?> clss) {
         return registeredTypes.get(clss) != null;
     }
-
 
 }

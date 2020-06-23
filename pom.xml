@@ -30,7 +30,7 @@
 
     <groupId>me.mattstudios.utils</groupId>
     <artifactId>matt-framework-jda</artifactId>
-    <version>1.1.7-BETA</version>
+    <version>1.1.10-BETA</version>
     <packaging>jar</packaging>
 
     <name>Matt's Framework - JDA</name>
@@ -65,8 +65,21 @@
         <developer>
             <name>Mateus Moreira</name>
             <email>xpsykogfx@gmail.com</email>
+            <roles>
+                <role>Developer</role>
+                <role>Maintainer</role>
+            </roles>
             <organization>MattStudios</organization>
             <organizationUrl>https://mattstudios.me/</organizationUrl>
+        </developer>
+        <developer>
+            <name>Callum Seabrook</name>
+            <email>callum.seabrook@prevarinite.com</email>
+            <roles>
+                <role>Contributor</role>
+            </roles>
+            <organization>Prevarinite</organization>
+            <organizationUrl>https://www.prevarinite.com</organizationUrl>
         </developer>
     </developers>
 

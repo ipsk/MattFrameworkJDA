@@ -23,6 +23,9 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * The class for registering commands, messages, requirements and parameters
+ */
 @SuppressWarnings("unused")
 public final class CommandManager extends ListenerAdapter {
 
@@ -36,6 +39,15 @@ public final class CommandManager extends ListenerAdapter {
     private final Set<String> prefixes = new HashSet<>();
     private final Map<String, CommandHandler> commands = new HashMap<>();
 
+    /**
+     * Registers a new CommandManager for the given JDA instance
+     * and using the given global prefix as the prefix for the
+     * commands registered using this instance
+     *
+     * @param jda          the JDA instance for the bot
+     * @param globalPrefix the prefix for all the commands registered
+     *                     using this instance
+     */
     public CommandManager(final JDA jda, final String globalPrefix) {
         this.jda = jda;
         this.parameterHandler = new ParameterHandler(jda);
@@ -44,10 +56,20 @@ public final class CommandManager extends ListenerAdapter {
         jda.addEventListener(this);
     }
 
+    /**
+     * Registers a new CommandManager for the given JDA instance
+     *
+     * @param jda the JDA instance for the bot
+     */
     public CommandManager(final JDA jda) {
         this(jda, null);
     }
 
+    /**
+     * Registers a command
+     *
+     * @param command the command to register
+     */
     public void register(final CommandBase command) {
         // Injects JDA into the command class
         command.setJda(jda);
@@ -81,6 +103,15 @@ public final class CommandManager extends ListenerAdapter {
     }
 
     /**
+     * Registers the given list of commands
+     *
+     * @param commands the list of commands to register
+     */
+    public void registerAll(final List<CommandBase> commands) {
+        commands.forEach(this::register);
+    }
+
+    /**
      * Method to add the registered commands
      *
      * @param commands The command and it's aliases
@@ -102,6 +133,7 @@ public final class CommandManager extends ListenerAdapter {
 
     /**
      * Unregisters the given command and prefix
+     *
      * @param prefix The prefix
      * @param command The command name
      */
