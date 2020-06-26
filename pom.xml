@@ -30,7 +30,7 @@
 
     <groupId>me.mattstudios.utils</groupId>
     <artifactId>matt-framework-jda</artifactId>
-    <version>1.1.10-BETA</version>
+    <version>1.1.11-BETA</version>
     <packaging>jar</packaging>
 
     <name>Matt's Framework - JDA</name>

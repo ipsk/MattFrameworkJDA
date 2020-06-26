@@ -170,6 +170,12 @@ public final class CommandHandler {
             return;
         }
 
+        // Checks if the subcommand is valid
+        if (subCommand.isDefault() && subCommand.getParams().isEmpty() && arguments.size() > 1) {
+            wrongUsage(message, null);
+            return;
+        }
+
         final String requirementId = subCommand.getRequirement();
         if (requirementId != null && !requirementHandler.getResolvedResult(requirementId, message.getMember())) {
             messageHandler.sendMessage("cmd.no.permission", message);
