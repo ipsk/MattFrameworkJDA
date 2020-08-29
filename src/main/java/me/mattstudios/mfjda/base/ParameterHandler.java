@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -21,7 +22,7 @@ public final class ParameterHandler {
     private final Map<Class<?>, ParameterResolver> registeredTypes = new HashMap<>();
 
     // Registers all the parameters;
-    ParameterHandler(final JDA jda) {
+    ParameterHandler(final @NotNull JDA jda) {
         register(Short.class, (arg, guild) -> {
             final Integer integer = Ints.tryParse(String.valueOf(arg));
             return integer == null ? new TypeResult(arg) : new TypeResult(integer.shortValue(), arg);
@@ -62,7 +63,7 @@ public final class ParameterHandler {
      * @param clss              The class type to be added.
      * @param parameterResolver The built in method that returns the value wanted.
      */
-    public void register(final Class<?> clss, final ParameterResolver parameterResolver) {
+    public void register(final @NotNull Class<?> clss, final @NotNull ParameterResolver parameterResolver) {
         registeredTypes.put(clss, parameterResolver);
     }
 
@@ -91,5 +92,4 @@ public final class ParameterHandler {
     boolean isRegisteredType(final Class<?> clss) {
         return registeredTypes.get(clss) != null;
     }
-
 }

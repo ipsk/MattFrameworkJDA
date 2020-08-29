@@ -1,9 +1,11 @@
 package me.mattstudios.mfjda.base.components;
 
+import org.jetbrains.annotations.Nullable;
+
 public final class TypeResult {
 
-    private final Object resolvedValue;
-    private final String argumentName;
+    private final @Nullable Object resolvedValue;
+    private final @Nullable String argumentName;
 
     /**
      * Main constructor
@@ -11,7 +13,7 @@ public final class TypeResult {
      * @param resolvedValue The resolved value
      * @param argumentName  The argument
      */
-    public TypeResult(final Object resolvedValue, final Object argumentName) {
+    public TypeResult(final @Nullable Object resolvedValue, final @Nullable Object argumentName) {
         this.resolvedValue = resolvedValue;
         this.argumentName = String.valueOf(argumentName);
     }
@@ -21,7 +23,7 @@ public final class TypeResult {
      *
      * @param argumentName The argument
      */
-    public TypeResult(final Object argumentName) {
+    public TypeResult(final @Nullable Object argumentName) {
         this(null, argumentName);
     }
 
@@ -30,7 +32,7 @@ public final class TypeResult {
      *
      * @return The resolved value
      */
-    public Object getResolvedValue() {
+    public @Nullable Object getResolvedValue() {
         return resolvedValue;
     }
 
@@ -39,7 +41,7 @@ public final class TypeResult {
      *
      * @return The argument name
      */
-    public String getArgumentName() {
+    public @Nullable String getArgumentName() {
         return argumentName;
     }
 }

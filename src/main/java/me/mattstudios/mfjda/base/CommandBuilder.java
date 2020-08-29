@@ -1,6 +1,7 @@
 package me.mattstudios.mfjda.base;
 
 import me.mattstudios.mfjda.base.components.CommandExecutor;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.List;
@@ -15,7 +16,7 @@ public final class CommandBuilder {
      * @param prefixes The list of prefixes
      * @return Builder
      */
-    public CommandBuilder setPrefix(final List<String> prefixes) {
+    public @NotNull CommandBuilder setPrefix(final @NotNull List<String> prefixes) {
         command.addPrefixes(prefixes);
         return this;
     }
@@ -26,7 +27,8 @@ public final class CommandBuilder {
      * @param prefix The prefix
      * @return Builder
      */
-    public CommandBuilder setPrefix(final String prefix) {
+    @SuppressWarnings("unused") // Framework method, used by the user of this framework, not us
+    public @NotNull CommandBuilder setPrefix(final @NotNull String prefix) {
         return setPrefix(Collections.singletonList(prefix));
     }
 
@@ -36,7 +38,7 @@ public final class CommandBuilder {
      * @param commands The list of commands
      * @return Builder
      */
-    public CommandBuilder setCommand(final List<String> commands) {
+    public @NotNull CommandBuilder setCommand(final @NotNull List<String> commands) {
         command.addCommands(commands);
         return this;
     }
@@ -47,7 +49,7 @@ public final class CommandBuilder {
      * @param command The command
      * @return Builder
      */
-    public CommandBuilder setCommand(final String command) {
+    public @NotNull CommandBuilder setCommand(final @NotNull String command) {
         return setCommand(Collections.singletonList(command));
     }
 
@@ -57,36 +59,36 @@ public final class CommandBuilder {
      * @param commandExecutor The executor
      * @return Builder
      */
-    public CommandBuilder setExecutor(final CommandExecutor commandExecutor) {
+    public @NotNull CommandBuilder setExecutor(final @NotNull CommandExecutor commandExecutor) {
         command.setCommandExecutor(commandExecutor);
         return this;
     }
 
-    public CommandBuilder setArgumentsLimit(final int lower, final int upper) {
+    public @NotNull CommandBuilder setArgumentsLimit(final int lower, final int upper) {
         command.setLimit(lower, upper);
         return this;
     }
 
-    public CommandBuilder setArgumentsLimit(final int limit) {
+    public @NotNull CommandBuilder setArgumentsLimit(final int limit) {
         return setArgumentsLimit(limit, limit);
     }
 
-    public CommandBuilder setRequirement(final String requirement) {
+    public @NotNull CommandBuilder setRequirement(final @NotNull String requirement) {
         command.setRequirement(requirement);
         return this;
     }
 
-    public CommandBuilder autoDelete() {
+    public @NotNull CommandBuilder autoDelete() {
         command.setAutoDelete(true);
         return this;
     }
 
-    public CommandBuilder setSubCommand(final List<String> subCommands) {
+    public @NotNull CommandBuilder setSubCommand(final @NotNull List<String> subCommands) {
         command.addSubCommands(subCommands);
         return this;
     }
 
-    public CommandBuilder setSubCommand(final String subCommand) {
+    public @NotNull CommandBuilder setSubCommand(final @NotNull String subCommand) {
         return setSubCommand(Collections.singletonList(subCommand));
     }
 
@@ -95,8 +97,8 @@ public final class CommandBuilder {
      *
      * @return A command base command
      */
-    public CommandBase build() {
+    @SuppressWarnings("unused") // Framework method, used by the user of this framework, not us
+    public @NotNull CommandBase build() {
         return command;
     }
-
 }

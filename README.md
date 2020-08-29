@@ -37,7 +37,7 @@ public class PingCommand extends CommandBase {
     
     @Default
     public void defaultCommand() {
-        TextChannel channel = message.textChannel;
+        final TextChannel channel = message.textChannel;
         channel.sendMessage("Pong!").queue();
     }
 }
@@ -51,9 +51,9 @@ Registering commands can be done by first creating a JDA instance, then passing 
 public class Main {
 
     public static void main(String[] args) {
-        JDA jda = JDABuilder.create("my_bot_token", Arrays.asList(GatewayIntent.EXAMPLE))
+        final JDA jda = JDABuilder.create("my_bot_token", Arrays.asList(GatewayIntent.EXAMPLE))
                             .build();
-        CommandManager commandManager = new CommandManager(jda);
+        final CommandManager commandManager = new CommandManager(jda);
         commandManager.register(PingCommand());
     }
 }
@@ -62,5 +62,5 @@ You can also optionally provide a global prefix to the `CommandManager` by using
 
 **Example global prefix:**
 ```java
-CommandManager commandManager = new CommandManager(jda, "!");
+final CommandManager commandManager = new CommandManager(jda, "!");
 ```

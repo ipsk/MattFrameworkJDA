@@ -1,8 +1,9 @@
 package me.mattstudios.mfjda.base;
 
 import me.mattstudios.mfjda.base.components.MessageResolver;
-import me.mattstudios.mfjda.exceptions.MfException;
+import me.mattstudios.mfjda.exceptions.MessageNotFoundException;
 import net.dv8tion.jda.api.entities.Message;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,21 +21,24 @@ public final class MessageHandler {
     }
 
     /**
-     * Method to register new messages and overwrite the existing ones.
+     * Registers a new message with the given messageId, and uses the given messageResolver
+     * to resolve it when sendMessage is executed.
      *
      * @param messageId       The message ID to be set.
      * @param messageResolver The message resolver function.
      */
-    public void register(final String messageId, final MessageResolver messageResolver) {
+    public void register(final @NotNull String messageId, final @NotNull MessageResolver messageResolver) {
         messages.put(messageId, messageResolver);
     }
 
     /**
-     * Checks if the message has ID
+     * Checks if this message handler contains the message ID specified
+     *
      * @param messageId the ID to check
-     * @return True or False
+     * @return true if the ID was not null (in the list), false if it was null
+     *         (not in the list)
      */
-    boolean hasId(String messageId) {
+    boolean hasId(final String messageId) {
         return messages.get(messageId) != null;
     }
 
@@ -46,7 +50,8 @@ public final class MessageHandler {
      */
     void sendMessage(final String messageId, final Message message) {
         final MessageResolver messageResolver = messages.get(messageId);
-        if (messageResolver == null) throw new MfException("The message ID " + messageId + " does not exist!");
+//        if (messageResolver == null) throw new MfException("The message ID " + messageId + " does not exist!");
+        if (messageResolver == null) throw new MessageNotFoundException(messageId);
         messageResolver.resolve(message);
     }
 
