@@ -6,10 +6,12 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Defines if the command message and the return message
- * should be deleted once sent
+ * Defines if the command message and the return message should be deleted once
+ * sent.
+ *
+ * @author Mateus Moreira
+ * @since 1.0
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface Delete {
-}
+public @interface Delete {}

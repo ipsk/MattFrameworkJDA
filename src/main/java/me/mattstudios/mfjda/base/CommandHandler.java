@@ -5,8 +5,11 @@ import me.mattstudios.mfjda.annotations.Delete;
 import me.mattstudios.mfjda.annotations.Optional;
 import me.mattstudios.mfjda.annotations.Requirement;
 import me.mattstudios.mfjda.annotations.SubCommand;
-import me.mattstudios.mfjda.exceptions.MfException;
+import me.mattstudios.mfjda.exceptions.IllegalParameterException;
+import me.mattstudios.mfjda.exceptions.IllegalRequirementException;
+import me.mattstudios.mfjda.exceptions.RequirementNotFoundException;
 import net.dv8tion.jda.api.entities.Message;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -39,10 +42,11 @@ public final class CommandHandler {
      * Checks whether or not the prefix is for this command
      *
      * @param prefix The prefix to check
-     * @return True or false
+     * @return true if the prefix is for the command that this handler handles (in the list),
+     *         false if it isn't (not in the list)
      */
     boolean isPrefix(final String prefix) {
-        return prefixes.parallelStream().anyMatch(p -> p.equals(prefix));
+        return prefixes.parallelStream().anyMatch(commandPrefix -> commandPrefix.equals(prefix));
     }
 
     /**
@@ -53,37 +57,16 @@ public final class CommandHandler {
     void registerSubCommands(final CommandBase command) {
 
         // Command made from builder
-        // TODO move methods out of this one
         if (command instanceof BuildCommand) {
-            final BuildCommand buildCommand = (BuildCommand) command;
-
-            prefixes.addAll(buildCommand.getPrefixes());
-
-            final CommandData commandData = new CommandData(command, null);
-
-            commandData.setLowerLimit(buildCommand.getLowerLimit());
-            commandData.setUpperLimit(buildCommand.getUpperLimit());
-            commandData.setRequirement(buildCommand.getRequirement());
-            commandData.setShouldDelete(buildCommand.autoDelete());
-
-            final List<String> subCommands = buildCommand.getSubCommands();
-            if (subCommands.isEmpty()) {
-                commandData.setDefault(true);
-                this.subCommands.put("jda-default", commandData);
-                return;
-            }
-
-            for (final String subCommand : subCommands) {
-                this.subCommands.put(subCommand, commandData);
-            }
-
+            registerSubCommands((BuildCommand) command);
             return;
         }
 
         // Iterates through all the methods in the class
         for (final Method method : command.getClass().getDeclaredMethods()) {
 
-            // Checks if the method is public
+            // Ensures that the method is public and is a method annotated with either @Default or @SubCommand, meaning
+            // we want to use it as a command method
             if ((!method.isAnnotationPresent(Default.class) && !method.isAnnotationPresent(SubCommand.class)) || !Modifier.isPublic(method.getModifiers())) {
                 continue;
             }
@@ -94,11 +77,13 @@ public final class CommandHandler {
                 final Class<?> parameter = method.getParameterTypes()[i];
 
                 if (parameter.equals(String[].class) && i != method.getParameterTypes().length - 1) {
-                    throw new MfException("Method " + method.getName() + " in class " + command.getClass().getName() + " 'String[] args' have to be the last parameter if wants to be used!");
+//                    throw new MfException("Method " + method.getName() + " in class " + command.getClass().getName() + " 'String[] args' have to be the last parameter if wants to be used!");
+                    throw new IllegalParameterException(method, command.getClass(), ": 'String[] args' must be the last parameter to be used!");
                 }
 
                 if (!this.parameterHandler.isRegisteredType(parameter)) {
-                    throw new MfException("Method " + method.getName() + " in class " + command.getClass().getName() + " contains unregistered parameter types!");
+//                    throw new MfException("Method " + method.getName() + " in class " + command.getClass().getName() + " contains unregistered parameter types!");
+                    throw new IllegalParameterException(method, command.getClass(), " contains unregistered parameter types!");
                 }
 
                 commandData.addParameter(parameter);
@@ -108,7 +93,8 @@ public final class CommandHandler {
                 final Parameter parameter = method.getParameters()[i];
 
                 if (i != method.getParameters().length - 1 && parameter.isAnnotationPresent(Optional.class))
-                    throw new MfException("Method " + method.getName() + " in class " + command.getClass().getName() + " - Optional parameters can only be used as the last parameter of a method!");
+//                    throw new MfException("Method " + method.getName() + " in class " + command.getClass().getName() + " - Optional parameters can only be used as the last parameter of a method!");
+                    throw new IllegalParameterException(method, command.getClass(), ": Optional parameters can only be used as the final parameter of a method!");
 
 
                 if (parameter.isAnnotationPresent(Optional.class)) commandData.setOptional(true);
@@ -120,11 +106,13 @@ public final class CommandHandler {
                 final String requirementId = method.getAnnotation(Requirement.class).value();
 
                 if (!requirementId.startsWith("#")) {
-                    throw new MfException("Method " + method.getName() + " in class " + command.getClass().getName() + " - The requirement ID must start with #!");
+//                    throw new MfException("Method " + method.getName() + " in class " + command.getClass().getName() + " attempted to register an invalid requirement. All requirement IDs must start with #!");
+                    throw new IllegalRequirementException(method, command.getClass(), " attempted to register an illegal requirement. All requirement IDs must start with '#'!");
                 }
 
                 if (!requirementHandler.isRegistered(requirementId)) {
-                    throw new MfException("Method " + method.getName() + " in class " + command.getClass().getName() + " - The ID entered in the requirement doesn't exist!");
+//                    throw new MfException("Method " + method.getName() + " in class " + command.getClass().getName() + " attempted to register a requirement that does not exist!");
+                    throw new RequirementNotFoundException(method, command.getClass(), " attempted to register a requirement that does not exist!");
                 }
 
                 commandData.setRequirement(requirementId);
@@ -150,13 +138,35 @@ public final class CommandHandler {
 
     }
 
+    void registerSubCommands(final BuildCommand command) {
+        prefixes.addAll(command.getPrefixes());
+
+        final CommandData data = new CommandData(command, null);
+
+        data.setLowerLimit(command.getLowerLimit());
+        data.setUpperLimit(command.getUpperLimit());
+        data.setRequirement(command.getRequirement());
+        data.setShouldDelete(command.shouldAutoDelete());
+
+        final List<String> subCommands = command.getSubCommands();
+        if (subCommands.isEmpty()) {
+            data.setDefault(true);
+            this.subCommands.put("jda-default", data);
+            return;
+        }
+
+        for (final String subCommand : subCommands) {
+            this.subCommands.put(subCommand, data);
+        }
+    }
+
     /**
-     * Method to run the command and it's sub commands
+     * Executes this handler's command and it's sub commands
      *
      * @param message   The message being parsed
      * @param arguments The arguments from the message
      */
-    public void executeCommand(final Message message, final List<String> arguments) {
+    public void executeCommand(final @NotNull Message message, final @NotNull List<String> arguments) {
         CommandData subCommand = getDefaultSubCommand();
 
         // Checks if it should be a default command or a sub command
@@ -164,15 +174,15 @@ public final class CommandHandler {
         if (arguments.size() > 1) commandArg = arguments.get(1).toLowerCase();
         if (subCommand == null || subCommands.containsKey(commandArg)) subCommand = subCommands.get(commandArg);
 
-        // Checks if the user is not typing the right command
+        // Ensures that the command is a valid command that exists, or sends the usage message if it isn't
         if (subCommand == null) {
-            wrongUsage(message, null);
+            sendWrongUsage(message);
             return;
         }
 
-        // Checks if the subcommand is valid
+        // Ensures that the sub command is a valid sub command, or sends the usage message if it isn't
         if (subCommand.isDefault() && subCommand.getParams().isEmpty() && arguments.size() > 1) {
-            wrongUsage(message, null);
+            sendWrongUsage(message);
             return;
         }
 
@@ -201,7 +211,7 @@ public final class CommandHandler {
                 return;
             }
 
-            // Check if the method only has a sender as parameter.
+            // Checks if the method only has a sender as the parameter.
             if (subCommand.getParams().size() == 0 && argumentsList.size() == 0) {
                 if (subCommand.shouldDelete()) message.delete().queue();
                 method.invoke(subCommand.getCommandBase());
@@ -219,12 +229,12 @@ public final class CommandHandler {
             // Checks for correct command usage.
             if (subCommand.getParams().size() != argumentsList.size() && !subCommand.hasOptional()) {
                 if (!subCommand.isDefault() && subCommand.getParams().size() == 0) {
-                    wrongUsage(message, subCommand);
+                    sendWrongUsage(message);
                     return;
                 }
 
                 if (!String[].class.isAssignableFrom(subCommand.getParams().get(subCommand.getParams().size() - 1))) {
-                    wrongUsage(message, subCommand);
+                    sendWrongUsage(message);
                     return;
                 }
 
@@ -241,12 +251,12 @@ public final class CommandHandler {
                 if (subCommand.hasOptional()) {
 
                     if (argumentsList.size() > subCommand.getParams().size()) {
-                        wrongUsage(message, subCommand);
+                        sendWrongUsage(message);
                         return;
                     }
 
                     if (argumentsList.size() < subCommand.getParams().size() - 1) {
-                        wrongUsage(message, subCommand);
+                        sendWrongUsage(message);
                         return;
                     }
 
@@ -256,7 +266,7 @@ public final class CommandHandler {
 
                 // checks if the parameters and arguments are valid
                 if (subCommand.getParams().size() > argumentsList.size()) {
-                    wrongUsage(message, subCommand);
+                    sendWrongUsage(message);
                     return;
                 }
 
@@ -295,7 +305,7 @@ public final class CommandHandler {
         final int argumentSize = arguments.size();
 
         if ((upperLimit != -1 && argumentSize > upperLimit) || (lowerLimit != -1 && argumentSize < lowerLimit)) {
-            wrongUsage(message, subCommand);
+            sendWrongUsage(message);
             return;
         }
 
@@ -340,10 +350,8 @@ public final class CommandHandler {
      * Sends the wrong message to the sender
      *
      * @param message    The message that is being sent
-     * @param subCommand The current sub command to get info from
      */
-    private void wrongUsage(final Message message, final CommandData subCommand) {
+    private void sendWrongUsage(final Message message) {
         messageHandler.sendMessage("cmd.wrong.usage", message);
     }
-
 }

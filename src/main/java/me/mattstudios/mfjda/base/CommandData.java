@@ -1,39 +1,42 @@
 package me.mattstudios.mfjda.base;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
 public final class CommandData {
 
-    private final CommandBase commandBase;
-    private final Method method;
+    private final @NotNull CommandBase commandBase;
+    private final @Nullable Method method;
 
     private boolean isDefault = false;
     private boolean hasOptional = false;
     private boolean shouldDelete = false;
 
-    private String requirement;
+    private @Nullable String requirement;
     private int lowerLimit = -1;
     private int upperLimit = -1;
 
     // The list with the other parameters.
-    private final List<Class<?>> params = new ArrayList<>();
+    private final @NotNull List<Class<?>> params = new ArrayList<>();
 
-    public CommandData(final CommandBase commandBase, final Method method) {
+    public CommandData(final @NotNull CommandBase commandBase, final @Nullable Method method) {
         this.commandBase = commandBase;
         this.method = method;
     }
 
-    public CommandBase getCommandBase() {
+    public @NotNull CommandBase getCommandBase() {
         return commandBase;
     }
 
-    public Method getMethod() {
+    public @Nullable Method getMethod() {
         return method;
     }
 
-    public List<Class<?>> getParams() {
+    public @NotNull List<Class<?>> getParams() {
         return params;
     }
 
@@ -65,7 +68,7 @@ public final class CommandData {
         this.shouldDelete = shouldDelete;
     }
 
-    public String getRequirement() {
+    public @Nullable String getRequirement() {
         return requirement;
     }
 

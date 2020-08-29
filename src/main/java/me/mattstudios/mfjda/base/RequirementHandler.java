@@ -2,6 +2,7 @@ package me.mattstudios.mfjda.base;
 
 import me.mattstudios.mfjda.base.components.RequirementResolver;
 import net.dv8tion.jda.api.entities.Member;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,12 +13,15 @@ public final class RequirementHandler {
     private final Map<String, RequirementResolver> registeredRequirements = new HashMap<>();
 
     /**
-     * Registers the new requirement
+     * Registers a new requirement with the specified ID
+     *
+     * Warning: This method WILL overwrite ANY previous requirements with
+     * the ID you specify! You have been warned!
      *
      * @param id                  The requirement ID
      * @param requirementResolver The resolver
      */
-    public void register(final String id, final RequirementResolver requirementResolver) {
+    public void register(final @NotNull String id, final @NotNull RequirementResolver requirementResolver) {
         registeredRequirements.put(id, requirementResolver);
     }
 
@@ -26,7 +30,7 @@ public final class RequirementHandler {
      *
      * @param id     The requirement ID
      * @param member The member using the command
-     * @return True if the command can be executed and false if not
+     * @return true if the command can be executed, or false if not
      */
     boolean getResolvedResult(final String id, final Member member) {
         final RequirementResolver requirementResolver = registeredRequirements.get(id);
@@ -34,13 +38,13 @@ public final class RequirementHandler {
     }
 
     /**
-     * Checks whether or not the ID is registered
+     * Checks whether or not a requirement with the specified ID has been registered
      *
-     * @param id The requirement ID
-     * @return True if registered
+     * @param id The requirement ID to check
+     * @return true if the requirement is not null (in the list), or false if it is null
+     *         (not in the list)
      */
     boolean isRegistered(final String id) {
         return registeredRequirements.get(id) != null;
     }
-
 }

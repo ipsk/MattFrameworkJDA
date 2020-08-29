@@ -100,7 +100,7 @@
         <dependency>
             <groupId>net.dv8tion</groupId>
             <artifactId>JDA</artifactId>
-            <version>4.1.1_148</version>
+            <version>4.2.0_197</version>
             <scope>provided</scope>
         </dependency>
 
@@ -108,7 +108,6 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>29.0-jre</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 

@@ -21,9 +21,11 @@ final class BuildCommand extends CommandBase {
     void addPrefixes(final List<String> prefixes) {
         this.prefixes.addAll(prefixes);
     }
+
     void addCommands(final List<String> commands) {
         this.commands.addAll(commands);
     }
+
     void addSubCommands(final List<String> subCommand) {
         this.subCommand.addAll(subCommand);
     }
@@ -31,16 +33,19 @@ final class BuildCommand extends CommandBase {
     List<String> getPrefixes() {
         return prefixes;
     }
+
     List<String> getCommands() {
         return commands;
     }
+
     List<String> getSubCommands() {
         return subCommand;
     }
 
-    boolean autoDelete() {
+    boolean shouldAutoDelete() {
         return autoDelete;
     }
+
     void setAutoDelete(final boolean autoDelete) {
         this.autoDelete = autoDelete;
     }
@@ -48,9 +53,11 @@ final class BuildCommand extends CommandBase {
     public int getLowerLimit() {
         return lowerLimit;
     }
+
     public int getUpperLimit() {
         return upperLimit;
     }
+
     void setLimit(final int lowerLimit, final int upperLimit) {
         this.lowerLimit = lowerLimit;
         this.upperLimit = upperLimit;
@@ -59,6 +66,7 @@ final class BuildCommand extends CommandBase {
     String getRequirement() {
         return requirement;
     }
+
     void setRequirement(final String requirement) {
         this.requirement = requirement;
     }

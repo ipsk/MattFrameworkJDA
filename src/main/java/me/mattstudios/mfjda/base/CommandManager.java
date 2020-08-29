@@ -5,32 +5,25 @@ import me.mattstudios.mfjda.annotations.Prefix;
 import me.mattstudios.mfjda.base.components.MessageResolver;
 import me.mattstudios.mfjda.base.components.ParameterResolver;
 import me.mattstudios.mfjda.base.components.RequirementResolver;
-import me.mattstudios.mfjda.exceptions.MfException;
+import me.mattstudios.mfjda.exceptions.IllegalCommandException;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * The class for registering commands, messages, requirements and parameters
  */
-@SuppressWarnings("unused")
 public final class CommandManager extends ListenerAdapter {
 
-    private final JDA jda;
-    private String globalPrefix;
+    private final @NotNull JDA jda;
+    private final @Nullable String globalPrefix;
 
     private final ParameterHandler parameterHandler;
     private final RequirementHandler requirementHandler = new RequirementHandler();
@@ -48,7 +41,7 @@ public final class CommandManager extends ListenerAdapter {
      * @param globalPrefix the prefix for all the commands registered
      *                     using this instance
      */
-    public CommandManager(final JDA jda, final String globalPrefix) {
+    public CommandManager(final @NotNull JDA jda, final @Nullable String globalPrefix) {
         this.jda = jda;
         this.parameterHandler = new ParameterHandler(jda);
         this.globalPrefix = globalPrefix;
@@ -61,7 +54,7 @@ public final class CommandManager extends ListenerAdapter {
      *
      * @param jda the JDA instance for the bot
      */
-    public CommandManager(final JDA jda) {
+    public CommandManager(final @NotNull JDA jda) {
         this(jda, null);
     }
 
@@ -70,7 +63,7 @@ public final class CommandManager extends ListenerAdapter {
      *
      * @param command the command to register
      */
-    public void register(final CommandBase command) {
+    public void register(final @NotNull CommandBase command) {
         // Injects JDA into the command class
         command.setJda(jda);
 
@@ -82,14 +75,16 @@ public final class CommandManager extends ListenerAdapter {
 
         final Class<?> commandClass = command.getClass();
 
-        // Checks for the Prefix annotation
+        // Ensures the command that is trying to be registered has the @Prefix annotation, if the globalPrefix is null
         if (!commandClass.isAnnotationPresent(Prefix.class) && globalPrefix == null) {
-            throw new MfException("Class " + commandClass.getName() + " needs to be annotated with @Prefix!");
+//            throw new MfException("Class " + commandClass.getName() + " needs to be annotated with @Prefix!");
+            throw new IllegalCommandException(commandClass, " needs to be annotated with @Prefix or a globalPrefix must be supplied!");
         }
 
-        // Checks for the Prefix annotation
+        // Ensures the command that is trying to be registered has the @Command annotation
         if (!commandClass.isAnnotationPresent(Command.class)) {
-            throw new MfException("Class " + commandClass.getName() + " needs to be annotated with @Command!");
+//            throw new MfException("Class " + commandClass.getName() + " needs to be annotated with @Command!");
+            throw new IllegalCommandException(commandClass, " needs to be annotated with @Command!");
         }
 
         final List<String> prefixes = !commandClass.isAnnotationPresent(Prefix.class) ? new ArrayList<>() : Arrays.asList(commandClass.getAnnotation(Prefix.class).value());
@@ -107,7 +102,8 @@ public final class CommandManager extends ListenerAdapter {
      *
      * @param commands the list of commands to register
      */
-    public void register(final List<CommandBase> commands) {
+    @SuppressWarnings("unused") // Framework method, used by the user of this framework, not us
+    public void register(final @NotNull List<CommandBase> commands) {
         commands.forEach(this::register);
     }
 
@@ -137,7 +133,8 @@ public final class CommandManager extends ListenerAdapter {
      * @param prefix The prefix
      * @param command The command name
      */
-    public void unregister(final String prefix, final String command) {
+    @SuppressWarnings("unused") // Framework method, used by the user of this framework, not us
+    public void unregister(final @NotNull String prefix, final @NotNull String command) {
         if (!prefixes.contains(prefix)) return;
         commands.remove(command);
 
@@ -155,7 +152,8 @@ public final class CommandManager extends ListenerAdapter {
      * @param id                  The requirement ID
      * @param requirementResolver The requirement resolver
      */
-    public void registerRequirement(final String id, final RequirementResolver requirementResolver) {
+    @SuppressWarnings("unused") // Framework method, used by the user of this framework, not us
+    public void registerRequirement(final @NotNull String id, final @NotNull RequirementResolver requirementResolver) {
         requirementHandler.register(id, requirementResolver);
     }
 
@@ -165,7 +163,8 @@ public final class CommandManager extends ListenerAdapter {
      * @param clss              The parameter class
      * @param parameterResolver The requirement resolver
      */
-    public void registerParameter(final Class<?> clss, final ParameterResolver parameterResolver) {
+    @SuppressWarnings("unused") // Framework method, used by the user of this framework, not us
+    public void registerParameter(final @NotNull Class<?> clss, final @NotNull ParameterResolver parameterResolver) {
         parameterHandler.register(clss, parameterResolver);
     }
 
@@ -175,7 +174,8 @@ public final class CommandManager extends ListenerAdapter {
      * @param id              The message ID
      * @param messageResolver The requirement resolver
      */
-    public void registerMessage(final String id, final MessageResolver messageResolver) {
+    @SuppressWarnings("unused") // Framework method, used by the user of this framework, not us
+    public void registerMessage(final @NotNull String id, final @NotNull MessageResolver messageResolver) {
         messageHandler.register(id, messageResolver);
     }
 
@@ -215,7 +215,7 @@ public final class CommandManager extends ListenerAdapter {
      * @return Whether or not the message starts with the prefix from the list
      */
     private String getPrefix(final String command) {
-        for (String prefix : prefixes) {
+        for (final String prefix : prefixes) {
             final Pattern pattern = Pattern.compile("^" + Pattern.quote(prefix) + "[\\w]");
             final Matcher matcher = pattern.matcher(command);
 
